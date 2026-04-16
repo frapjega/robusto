@@ -1,0 +1,8 @@
+running on the client:
+-main.py 
+
+
+main.py: 
+- piccolo, leggibile
+- in if __name__ == "__main__" funzioni:
+	setup (avvio tread, inizializzazione moduli, controllo connessione ad ollama)
