@@ -1,8 +1,8 @@
 # 🤖 Ro-Busto
 
 > **Versione:** 1.0.0 | **Stato:** In sviluppo  
-> **Autori:** Guido Gusberti, Alex Vadeu, Pietro Fratesi  
-> **Istituto:** ITIS G. Cardano, Pavia — Classe 5^CI (2025)  
+> **Autori**(di v1.0.0)**:** Guido Gusberti, Alex Vadeu, Pietro Fratesi  
+> **Istituto:** ITIS G. Cardano, Pavia  
 > **Supervisore:** Prof. Ing. Nicola Muto  
 
 ---
