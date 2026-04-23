@@ -5,7 +5,7 @@ import requests
 # conf = config()
 
 class ollama:
-    def __init__(self, IP_ollama="10.110.99.5", port="11434", model='robusto_deep_seek_v1'):
+    def __init__(self, IP_ollama="10.110.99.5", port="11434", model='mistral-nemo'):
         """Initialize the ollama class with the IP address, port and model to be used"""
         # self.IP_server = IP_ollama
         try:
