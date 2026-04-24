@@ -1,80 +1,142 @@
-import cv2 
-from deepface import DeepFace 
-import pathlib 
-import platform 
-from pathlib import Path 
+import cv2
+from deepface import DeepFace
+import pathlib
+import platform
+from pathlib import Path
+import threading
+import collections
+import time
 
-class Vision: 
-    def __init__(self,): 
-        self._cap = cv2.VideoCapture(0) # Prende videocamera default 
-        self._working_path = pathlib.Path().resolve() 
+class Vision:
+    def __init__(self):
+        self._cap = None
+        self._thread = None
+        self._stop_event = threading.Event()
+        self._lock = threading.Lock()
+        self._working_path = pathlib.Path().resolve()
         self._saved_name = set()
         self.last_person_found = False
         self.last_name = None
-        
-        # Esegue il sistema visivo del pc e seleziona quale usare 
-        # Nella versione threaded non puoi usare questo 
-    def run(self, face_detect: bool = True, object_detect: bool = False): 
-        
-        print("DB path:", str((self._working_path.parent / "assets" / "faces").resolve())) 
-        
-        if platform.system() == "Windows": 
-            db_path = ("assets\\faces") 
-        else: db_path = ("assets/faces") 
-        
-        print("Premi 'q' per uscire") 
-        
-        while True: 
-            
-            _, img = self._cap.read() 
-            
-            if face_detect: 
-                img = self.face_detection(img, db_path) 
-            
-            if object_detect: 
-                pass 
-            
-            cv2.imshow("Recognition", img) 
-            
-            if cv2.waitKey(1) & 0xFF == ord('q'): 
-                break   
+        self.current_name = None
+        self.recognized_history = collections.deque(maxlen=50)
+        self._show_window = True
+        self.face_detect = True
+        self.object_detect = False
+        self._db_path = self._get_db_path()
 
-    def face_detection(self, img, db_path): 
-        
-        results = DeepFace.find(img, db_path, enforce_detection=False, silent=True)
+    def _get_db_path(self):
+        try:
+            return str((self._working_path.parent / "assets" / "faces").resolve())
+        except Exception as e:
+            try:
+                return str((self._working_path / "assets" / "faces").resolve())
+            except Exception as e2:
+                try:
+                    return str((self._working_path / "vision" / "assets" / "faces").resolve())
+                except Exception as e3:
+                    print(f"Errore durante il recupero del percorso del database: {e}\n{e2}\n{e3}")
+                    return None            
 
-        THRESHOLD = 0.6 # distanza massima per riconoscere una persona
-        
-        # ------------------ SE NON CI SONO RISULTATI ------------------
+    def start(self, face_detect: bool = True, object_detect: bool = False, show_window: bool = True):
+        if self._thread and self._thread.is_alive():
+            return
+
+        self.face_detect = face_detect
+        self.object_detect = object_detect
+        self._show_window = show_window
+        self._stop_event.clear()
+        self._cap = cv2.VideoCapture(0)
+        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._thread.start()
+
+    def run(self, face_detect: bool = True, object_detect: bool = False, show_window: bool = True):
+        self.start(face_detect=face_detect, object_detect=object_detect, show_window=show_window)
+        if self._thread:
+            self._thread.join()
+
+    def stop(self):
+        self._stop_event.set()
+        if self._thread and threading.current_thread() is not self._thread:
+            self._thread.join(timeout=2)
+        self._cleanup()
+
+    def _run_loop(self):
+        print("DB path:", self._db_path)
+        print("Premi 'q' per uscire")
+
+        if not self._cap or not self._cap.isOpened():
+            print("Errore: impossibile aprire la videocamera")
+            return
+
+        while not self._stop_event.is_set():
+            ok, img = self._cap.read()
+            if not ok or img is None:
+                time.sleep(0.05)
+                continue
+
+            if self.face_detect:
+                img = self.face_detection(img)
+
+            if self.object_detect:
+                pass
+
+            if self._show_window:
+                cv2.imshow("Recognition", img)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.stop()
+                    break
+
+        self._cleanup()
+
+    def _cleanup(self):
+        if self._cap:
+            self._cap.release()
+            self._cap = None
+        if self._show_window:
+            cv2.destroyAllWindows()
+
+    def get_last_recognized(self):
+        with self._lock:
+            return self.current_name
+
+    def get_recognized_history(self):
+        with self._lock:
+            return list(self.recognized_history)
+
+    def clear_recognized_history(self):
+        with self._lock:
+            self.recognized_history.clear()
+            self.current_name = None
+
+    def face_detection(self, img):
+        results = DeepFace.find(img, self._db_path, enforce_detection=False, silent=True)
+
+        THRESHOLD = 0.5 # confidence threshold for face recognition
+
         if not results or all(r.empty for r in results):
-            if self.last_person_found:       # stampo 1 volta
+            if self.last_person_found:
                 with open("riconoscimenti.txt", "w") as f:
-                    f.write("") # file vuoto
+                    f.write("")
                 print("Nessuna persona presente")
             self.last_person_found = False
             self.last_name = None
+            with self._lock:
+                self.current_name = None
             return img
-        
-        # DeepFace.find può restituire più dataframe → iteriamo
+
         for df in results:
             if df.empty:
                 continue
 
-            # Coordinate volto
-            x = df['source_x'][0]
-            y = df['source_y'][0]
-            w = df['source_w'][0]
-            h = df['source_h'][0]
+            x = int(df['source_x'][0])
+            y = int(df['source_y'][0])
+            w = int(df['source_w'][0])
+            h = int(df['source_h'][0])
 
-            # Nome cartella
             identity_path = df['identity'][0]
             name = Path(identity_path).parent.name
+            distance = float(df["distance"][0])
 
-            # Distanza → più bassa = più simile
-            distance = df["distance"][0]
-
-            # ------------------ CONTROLLO CONFIDENCE ------------------
-            # Se distanza > 0.6 → NON riconosciuto
             if distance > THRESHOLD:
                 if self.last_person_found:
                     with open("riconoscimenti.txt", "w") as f:
@@ -82,23 +144,40 @@ class Vision:
                     print("Nessuna persona presente")
                 self.last_person_found = False
                 self.last_name = None
+                with self._lock:
+                    self.current_name = None
                 return img
+            
 
-            # ------------------ STAMPA SOLO UNA VOLTA ------------------
             if name != self.last_name:
                 self.last_name = name
                 self.last_person_found = True
                 with open("riconoscimenti.txt", "w") as f:
                     f.write(name + "\n")
+                with self._lock:
+                    self.current_name = name
+                    self.recognized_history.append(name)
 
-            # ------------------ EMOTION ANALYSIS ------------------
             face_roi = img[y:y + h, x:x + w]
             analysis = DeepFace.analyze(face_roi, ['emotion'], silent=True, enforce_detection=False)
 
-            # ------------------ DISEGNO SULLO SCHERMO ------------------
             cv2.putText(img, f'{name}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
             cv2.putText(img, f'Emozione: {analysis[0]["dominant_emotion"]}', (x, y + 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0))
 
         return img
+
+
+if __name__ == "__main__":
+    vision = Vision()
+    vision.start()
+
+    try:
+        while True:
+            last = vision.get_last_recognized()
+            if last is not None:
+                print("Ultima persona riconosciuta:", last)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        vision.stop()
