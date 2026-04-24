@@ -1,8 +1,11 @@
 from ast import main
 import requests
 
-# from configuration import config
-# conf = config()
+try:
+    from configuration import config
+    conf = config()
+except:
+    print("configuration file not finded, using default configuration")
 
 class ollama:
     def __init__(self, IP_ollama="10.110.99.5", port="11434", model='mistral-nemo'):
