@@ -115,7 +115,7 @@ class Vision:
 
         if not results or all(r.empty for r in results):
             if self.last_person_found:
-                with open("riconoscimenti.txt", "w") as f:
+                with open("recognition.txt", "w") as f:
                     f.write("")
                 print("Nessuna persona presente")
             self.last_person_found = False
@@ -139,7 +139,7 @@ class Vision:
 
             if distance > THRESHOLD:
                 if self.last_person_found:
-                    with open("riconoscimenti.txt", "w") as f:
+                    with open("recognition.txt", "w") as f:
                         f.write("")
                     print("Nessuna persona presente")
                 self.last_person_found = False
@@ -152,7 +152,7 @@ class Vision:
             if name != self.last_name:
                 self.last_name = name
                 self.last_person_found = True
-                with open("riconoscimenti.txt", "w") as f:
+                with open("recognition.txt", "w") as f:
                     f.write(name + "\n")
                 with self._lock:
                     self.current_name = name

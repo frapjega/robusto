@@ -1,2 +1,4 @@
 .env
-riconoscimenti.txt
+vision/recognition.txt
+**/__pycache__/
+model/

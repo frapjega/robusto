@@ -8,7 +8,7 @@ except:
     print("configuration file not finded, using default configuration")
 
 class ollama:
-    def __init__(self, IP_ollama="10.110.99.5", port="11434", model='mistral-nemo'):
+    def __init__(self, IP_ollama="127.0.0.1", port="11434", model='llama3.2'):
         """Initialize the ollama class with the IP address, port and model to be used"""
         # self.IP_server = IP_ollama
         try:
@@ -57,7 +57,7 @@ class ollama:
 
 
 
-    movimenti = ["apri mano", "chiudi mano", "gesto vittoria", "OK", "saluto", "estensione bicipite", "flessione bicipite", "apertura spalla", "chiusura spalla", "spalla su", "spalla giu", "distensione braccio", "contrazione braccio"]
+    movimenti = ["apri mano", "chiudi mano", "gesto vittoria", "OK", "saluto", "estensione bicipite", "flessione bicipite", "apertura spalla", "chiusura spalla", "spalla su", "spalla giu", "distensione braccio", "contrazione braccio", "none"]
 
     def request(self, prompt: str, timeout=30, movimenti_disponibili = movimenti):
         self.history.append({"role": "user", "content": prompt})
@@ -85,11 +85,6 @@ class ollama:
         self.history.append({"role": response_data['message']['role'], "content": response_data['message']['content']})
         return response_data['message']['content']
     
-
-
-
-
-
 
     def change_model(self, model):
         """permised to chage the corrent model. if the changing was sucsesfull ruturn True"""
