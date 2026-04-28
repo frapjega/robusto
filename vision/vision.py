@@ -37,7 +37,18 @@ class Vision:
                     print(f"Errore durante il recupero del percorso del database: {e}\n{e2}\n{e3}")
                     return None            
 
-    def start(self, face_detect: bool = True, object_detect: bool = False, show_window: bool = True):
+    def find_cameras(self, limit: int =10):
+        available_indexes = []
+        for i in range(limit):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                print(f"Fotocamera trovata all'indice: {i}")
+                available_indexes.append(i)
+                cap.release()
+        return available_indexes
+
+
+    def start(self, face_detect: bool = True, object_detect: bool = False, show_window: bool = True, camera: int = 0):
         if self._thread and self._thread.is_alive():
             return
 
@@ -45,7 +56,7 @@ class Vision:
         self.object_detect = object_detect
         self._show_window = show_window
         self._stop_event.clear()
-        self._cap = cv2.VideoCapture(0)
+        self._cap = cv2.VideoCapture(camera) #### 4
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
 
@@ -171,7 +182,14 @@ class Vision:
 
 if __name__ == "__main__":
     vision = Vision()
-    vision.start()
+    print("indici camera disponibili " + str(vision.find_cameras()))
+    cam = input("a quale camera ti vuoi connettere?")
+    try:
+        cam = int(cam)
+    except:
+        print("inserisci un indice tra quelli indicati")
+
+    vision.start(camera=cam)
 
     try:
         while True:

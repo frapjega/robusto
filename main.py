@@ -7,6 +7,9 @@ import pyaudio
 import pyttsx3
 import vosk
 
+import datetime
+import os
+
 
 from vision.vision import Vision
 from requests3 import ollama
@@ -14,19 +17,30 @@ from audio import run_tts, recognize_speech, capture_audio, text_queue
 
 
 # to implement:
-##  gestione camera
+##  log -- da implementare write_log() dove serve
+##  gestione camera -- done
 ##  gestione errori
 ##  comandi
 ##  scrittura su seriale
 
 
-#create objects
-
-Ollama = ollama()
-vision = Vision()
-
-
 #create functions
+
+def write_log(message):
+    directory = "logs"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    # In questo caso potresti volere un log giornaliero invece che al secondo
+    day_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    file_path = os.path.join(directory, f"log-{day_str}.log")
+    
+    # Il file si chiude da solo alla fine del blocco 'with'
+    with open(file_path, "a") as f:
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        f.write(f"[{timestamp}] {message}\n")
+
+
 
 def init_audio():
 
@@ -149,6 +163,18 @@ def handle_loop_audio():
 
 if __name__ == "__main__":
     print("inizializzazione in corso...")
+    write_log("inizializzazione in corso...")
+
+    Ollama = ollama()
+    vision = Vision()
+
+    print("indici camera disponibili " + str(vision.find_cameras()))
+    cam = input("a quale camera ti vuoi connettere?")
+    try:
+        cam = int(cam)
+    except:
+        print("inserisci un indice tra quelli indicati")
+    vision.start(camera=cam)
     audio = input("vuoi usare l'audio? (s/N)").strip().lower()
     if audio == 's':
         init_audio()
