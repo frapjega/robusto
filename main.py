@@ -8,14 +8,22 @@ import pyttsx3
 import vosk
 
 
-# from vision.vision import Vision
+from vision.vision import Vision
 from requests3 import ollama
 from audio import run_tts, recognize_speech, capture_audio, text_queue
+
+
+# to implement:
+##  gestione camera
+##  gestione errori
+##  comandi
+##  scrittura su seriale
 
 
 #create objects
 
 Ollama = ollama()
+vision = Vision()
 
 
 #create functions
@@ -74,7 +82,39 @@ def execute(par: int) -> None:
     print(f"eseguita azione: {ollama.movimenti[par]}")
 
 
-def handle_main ():
+def create_prompt(message, people):
+    prompt = {"massage": message,
+              "recognized people": people}
+    prompt = str(prompt)
+    # print(prompt)
+    return prompt
+
+
+def handle_loop():
+    while True:
+
+        prompt = input(">> ")
+        try:                
+            prompt = create_prompt(prompt, vision.get_last_recognized())
+        except:
+            prompt = create_prompt(prompt, None)
+            
+        response = Ollama.request(prompt)
+        
+        try:
+            response = json.loads(response) 
+            # print(response)    
+            print(f"AI: {response["response"]}")    
+            # print(response["movement"])    
+        except:
+            print(response)    
+
+        index_movement = Ollama.movimenti.index(response["movement"])
+        execute(index_movement)
+
+
+
+def handle_loop_audio():
     while True:
 
         try:
@@ -83,12 +123,18 @@ def handle_main ():
             prompt = None
         
         if prompt is not None:
+            try:                
+                prompt = create_prompt(prompt, vision.get_last_recognized())
+            except:
+                prompt = create_prompt(prompt, None)
+                
             response = Ollama.request(prompt)
+            
             try:
                 response = json.loads(response) 
-                print(response)    
-                print(response["response"])    
-                print(response["movement"])    
+                # print(response)    
+                print(f"AI: {response["response"]}")
+                # print(response["movement"])    
             except:
                 print(response)    
 
@@ -99,9 +145,13 @@ def handle_main ():
             print(":<>")
 
 
-print("inizializzazione in corso...")
 
-init_audio()
 
 if __name__ == "__main__":
-    handle_main()
+    print("inizializzazione in corso...")
+    audio = input("vuoi usare l'audio? (s/N)").strip().lower()
+    if audio == 's':
+        init_audio()
+        handle_loop_audio()
+    else:
+        handle_loop()

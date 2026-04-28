@@ -59,8 +59,8 @@ class ollama:
 
     movimenti = ["apri mano", "chiudi mano", "gesto vittoria", "OK", "saluto", "estensione bicipite", "flessione bicipite", "apertura spalla", "chiusura spalla", "spalla su", "spalla giu", "distensione braccio", "contrazione braccio", "none"]
 
-    def request(self, prompt: str, timeout=30, movimenti_disponibili = movimenti):
-        self.history.append({"role": "user", "content": prompt})
+    def request(self, question: str, timeout=30, movimenti_disponibili = movimenti):
+        self.history.append({"role": "user", "content": question})
         payload = {
             "model": self.model,
             "messages": self.history,
@@ -81,10 +81,13 @@ class ollama:
                             json=payload,
                             timeout=timeout)
         
-        response_data = response.json()
-        self.history.append({"role": response_data['message']['role'], "content": response_data['message']['content']})
-        return response_data['message']['content']
-    
+        try:    
+            response_data = response.json()
+            self.history.append({"role": response_data['message']['role'], "content": response_data['message']['content']})
+            return response_data['message']['content']
+        except:
+            return response_data
+
 
     def change_model(self, model):
         """permised to chage the corrent model. if the changing was sucsesfull ruturn True"""
