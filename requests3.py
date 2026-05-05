@@ -4,8 +4,8 @@ import requests
 try:
     from configuration import config
     conf = config()
-except:
-    print("configuration file not finded, using default configuration")
+except ImportError:
+    print("Avviso: File di configurazione non trovato, usando configurazione predefinita")
 
 class ollama:
     def __init__(self, IP_ollama="127.0.0.1", port="11434", model='llama3.2'):

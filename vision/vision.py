@@ -1,4 +1,5 @@
 import cv2
+from cv2_enumerate_cameras import enumerate_cameras
 from deepface import DeepFace
 import pathlib
 import platform
@@ -13,7 +14,7 @@ class Vision:
         self._thread = None
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
-        self._working_path = pathlib.Path().resolve()
+        self._working_path = pathlib.Path(__file__).resolve()
         self._saved_name = set()
         self.last_person_found = False
         self.last_name = None
@@ -27,25 +28,22 @@ class Vision:
     def _get_db_path(self):
         try:
             return str((self._working_path.parent / "assets" / "faces").resolve())
-        except Exception as e:
-            try:
-                return str((self._working_path / "assets" / "faces").resolve())
-            except Exception as e2:
-                try:
-                    return str((self._working_path / "vision" / "assets" / "faces").resolve())
-                except Exception as e3:
-                    print(f"Errore durante il recupero del percorso del database: {e}\n{e2}\n{e3}")
-                    return None            
+        except Exception as e3:
+            print(f"Errore durante il recupero del percorso del database: {e3}")
+            return None            
+        
 
-    def find_cameras(self, limit: int =10):
-        available_indexes = []
-        for i in range(limit):
-            cap = cv2.VideoCapture(i)
-            if cap.isOpened():
-                print(f"Fotocamera trovata all'indice: {i}")
-                available_indexes.append(i)
-                cap.release()
-        return available_indexes
+    def find_cameras(self):
+        available_cameras = []
+        for camera_info in enumerate_cameras():
+            print(f"Fotocamera trovata: {camera_info.name} (Indice: {camera_info.index})")
+            available_cameras.append({
+                "index": camera_info.index,
+                "name": camera_info.name,
+                "backend": camera_info.backend
+            })
+        return available_cameras
+
 
 
     def start(self, face_detect: bool = True, object_detect: bool = False, show_window: bool = True, camera: int = 0):
@@ -182,10 +180,18 @@ class Vision:
 
 if __name__ == "__main__":
     vision = Vision()
-    print("indici camera disponibili " + str(vision.find_cameras()))
-    cam = input("a quale camera ti vuoi connettere?")
+    print("input video disponibili:")
+    cam_list = vision.find_cameras()
+
+    for i in range(len(cam_list)):
+        print(str(i) +": "+ cam_list[i]['name'])
+
+    num_cam = int(input("a quale camera ti vuoi connettere?"))
+    cam_index = cam_list[num_cam]['index']
+    print(cam_index)
+    print(cam_list)
     try:
-        cam = int(cam)
+        cam = int(cam_index)
     except:
         print("inserisci un indice tra quelli indicati")
 

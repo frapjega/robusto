@@ -1,14 +1,22 @@
+# Suppress TensorFlow/ABSL warnings before importing modules that use them
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow debug info
+os.environ['ABSL_FLAGS_stderrthreshold'] = '2'  # Suppress ABSL warnings
+
 import json
 import queue
 import sys
 import threading
+import logging
+
+# Suppress absl logging
+logging.getLogger('absl').setLevel(logging.ERROR)
 
 import pyaudio
 import pyttsx3
 import vosk
 
 import datetime
-import os
 
 
 from vision.vision import Vision
@@ -106,78 +114,118 @@ def create_prompt(message, people):
 
 def handle_loop():
     while True:
-
-        prompt = input(">> ")
-        try:                
-            prompt = create_prompt(prompt, vision.get_last_recognized())
-        except:
-            prompt = create_prompt(prompt, None)
-            
-        response = Ollama.request(prompt)
-        
         try:
-            response = json.loads(response) 
-            # print(response)    
-            print(f"AI: {response["response"]}")    
-            # print(response["movement"])    
-        except:
-            print(response)    
-
-        index_movement = Ollama.movimenti.index(response["movement"])
-        execute(index_movement)
-
-
-
-def handle_loop_audio():
-    while True:
-
-        try:
-            prompt = text_queue.get(timeout=0.5)
-        except:
-            prompt = None
-        
-        if prompt is not None:
+            prompt = input(">> ")
             try:                
                 prompt = create_prompt(prompt, vision.get_last_recognized())
-            except:
+            except Exception as e:
+                write_log(f"Errore nella creazione del prompt: {e}")
                 prompt = create_prompt(prompt, None)
                 
             response = Ollama.request(prompt)
             
             try:
                 response = json.loads(response) 
-                # print(response)    
-                print(f"AI: {response["response"]}")
-                # print(response["movement"])    
-            except:
-                print(response)    
+                print(f"AI: {response.get('response', 'Errore nella risposta')}")
+                
+                if "movement" in response:
+                    try:
+                        index_movement = Ollama.movimenti.index(response["movement"])
+                        execute(index_movement)
+                    except ValueError:
+                        write_log(f"Movimento sconosciuto: {response['movement']}")
+                        print(f"Avviso: Movimento non riconosciuto: {response['movement']}")
+            except json.JSONDecodeError as e:
+                write_log(f"Errore nel parsing della risposta: {e}")
+                print(f"Avviso: Errore nel parsing della risposta")
+        except KeyboardInterrupt:
+            print("\nApplicazione terminata.")
+            write_log("Applicazione terminata da utente")
+            break
+        except Exception as e:
+            write_log(f"Errore non previsto in handle_loop: {e}")
+            print(f"Errore: {e}")
 
-            index_movement = Ollama.movimenti.index(response["movement"])
-            execute(index_movement)
-            run_tts(engine, stop_event, response["response"])
-        else:
-            print(":<>")
+
+
+def handle_loop_audio():
+    try:
+        while True:
+            try:
+                prompt = text_queue.get(timeout=0.5)
+            except queue.Empty:
+                prompt = None
+            
+            if prompt is not None:
+                try:                
+                    prompt = create_prompt(prompt, vision.get_last_recognized())
+                except Exception as e:
+                    write_log(f"Errore nella creazione del prompt: {e}")
+                    prompt = create_prompt(prompt, None)
+                    
+                response = Ollama.request(prompt)
+                
+                try:
+                    response = json.loads(response) 
+                    print(f"AI: {response.get('response', 'Errore nella risposta')}")
+                    
+                    if "movement" in response:
+                        try:
+                            index_movement = Ollama.movimenti.index(response["movement"])
+                            execute(index_movement)
+                            run_tts(engine, stop_event, response["response"])
+                        except ValueError:
+                            write_log(f"Movimento sconosciuto: {response['movement']}")
+                            print(f"Avviso: Movimento non riconosciuto: {response['movement']}")
+                except json.JSONDecodeError as e:
+                    write_log(f"Errore nel parsing della risposta: {e}")
+                    print(f"Avviso: Errore nel parsing della risposta")
+    except KeyboardInterrupt:
+        print("\nApplicazione terminata.")
+        write_log("Applicazione terminata da utente")
+    except Exception as e:
+        write_log(f"Errore non previsto in handle_loop_audio: {e}")
+        print(f"Errore: {e}")
 
 
 
 
 if __name__ == "__main__":
-    print("inizializzazione in corso...")
-    write_log("inizializzazione in corso...")
-
-    Ollama = ollama()
-    vision = Vision()
-
-    print("indici camera disponibili " + str(vision.find_cameras()))
-    cam = input("a quale camera ti vuoi connettere?")
     try:
-        cam = int(cam)
-    except:
-        print("inserisci un indice tra quelli indicati")
-    vision.start(camera=cam)
-    audio = input("vuoi usare l'audio? (s/N)").strip().lower()
-    if audio == 's':
-        init_audio()
-        handle_loop_audio()
-    else:
-        handle_loop()
+        print("Inizializzazione in corso...")
+        write_log("Inizializzazione in corso")
+
+        Ollama = ollama()
+        vision = Vision()
+
+        print("\nTelecamere disponibili:")
+        cameras = vision.find_cameras()
+        for cam_info in cameras:
+            print(f"  • Indice {cam_info['index']}: {cam_info['name']}")
+        
+        cam = input("\nA quale camera vuoi connetterti? ")
+        try:
+            cam = int(cam)
+            print(f"Connessione alla camera {cam}")
+        except ValueError:
+            print("Indice non valido. Inserisci un numero tra quelli indicati.")
+            write_log("Errore: indice camera non valido")
+            sys.exit(1)
+            
+        vision.start(camera=cam)
+        
+        audio = input("\nVuoi usare l'audio? (s/N): ").strip().lower()
+        if audio == 's':
+            print("Inizializzazione audio...")
+            init_audio()
+            handle_loop_audio()
+        else:
+            print("Modalità testo attiva\n")
+            handle_loop()
+    except KeyboardInterrupt:
+        print("\nApplicazione terminata.")
+        write_log("Applicazione terminata da utente durante inizializzazione")
+    except Exception as e:
+        print(f"Errore critico: {e}")
+        write_log(f"Errore critico durante inizializzazione: {e}")
+        sys.exit(1)
