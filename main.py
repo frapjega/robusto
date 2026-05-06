@@ -103,6 +103,49 @@ def init_audio():
 def execute(par: int) -> None:
     print(f"eseguita azione: {ollama.movimenti[par]}")
 
+    ### da completare
+
+
+
+
+def execute_command(command: str):
+
+    if command.split()[0] == "/execute":
+
+        if command.split()[1][1] == "-":
+            pass
+
+
+        try:
+            int(command.split()[1])
+            execute(command.split()[1])
+            if command.split()[1] > 12 or command.split()[1] < 0:
+                raise ValueError    
+
+        except (IndexError, ValueError):
+            try:
+                int(command.split()[2])
+                execute(command.split()[2])
+                if command.split()[2] > 12 or command.split()[2] < 0:
+                    raise ValueError   
+
+            except:
+                print("""comando /execute deve essere seguito da un numero intero 0-12""")
+
+    
+    elif command.split()[0] == "/setIP":
+        if Ollama.change_conf(IP_ollama = command.split()[1]) == True:
+            print("modifica IP server avvenuta con successo")
+        elif ping :
+            print("errore nella modifica dell'idirizzo IP del server, controllare ")
+
+
+
+
+
+    pass
+
+
 
 def create_prompt(message, people):
     prompt = {"massage": message,
@@ -116,6 +159,8 @@ def handle_loop():
     while True:
         try:
             prompt = input(">> ")
+            if prompt[0] == "/":
+                execute_command(prompt)
             try:                
                 prompt = create_prompt(prompt, vision.get_last_recognized())
             except Exception as e:
@@ -126,6 +171,8 @@ def handle_loop():
             
             try:
                 response = json.loads(response) 
+
+                # da implementare se modello assenste
                 print(f"AI: {response.get('response', 'Errore nella risposta')}")
                 
                 if "movement" in response:
@@ -201,7 +248,7 @@ if __name__ == "__main__":
         print("\nTelecamere disponibili:")
         cameras = vision.find_cameras()
         for cam_info in cameras:
-            print(f"  • Indice {cam_info['index']}: {cam_info['name']}")
+            print(f"  • {cam_info['index']}: {cam_info['name']}")
         
         cam = input("\nA quale camera vuoi connetterti? ")
         try:
@@ -214,14 +261,17 @@ if __name__ == "__main__":
             
         vision.start(camera=cam)
         
-        audio = input("\nVuoi usare l'audio? (s/N): ").strip().lower()
-        if audio == 's':
-            print("Inizializzazione audio...")
-            init_audio()
-            handle_loop_audio()
-        else:
-            print("Modalità testo attiva\n")
-            handle_loop()
+        # audio = input("\nVuoi usare l'audio? (s/N): ").strip().lower()
+        # if audio == 's':
+        #     print("Inizializzazione audio...")
+        #     init_audio()
+        #     handle_loop_audio()
+        # else:
+        #     print("Modalità testo attiva\n")
+        #     handle_loop()
+
+
+        handle_loop()
     except KeyboardInterrupt:
         print("\nApplicazione terminata.")
         write_log("Applicazione terminata da utente durante inizializzazione")

@@ -3,3 +3,6 @@ vision/recognition.txt
 **/__pycache__/
 model/
 logs/**
+appunti.*
+/recognition.txt
+recognition.txt

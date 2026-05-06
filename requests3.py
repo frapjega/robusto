@@ -1,7 +1,11 @@
 from ast import main
 import requests
+from pythonping import ping
+import subprocess
+import os
 
-try:
+
+try:    
     from configuration import config
     conf = config()
 except ImportError:
@@ -21,7 +25,7 @@ class ollama:
             self.model = model
         self.history = []
 
-    def load_conf(self, IP_ollama=None, port=None, model=None):
+    def change_conf(self, IP_ollama=None, port=None, model=None):
         """Load configuration in the ollama class, check the internet connection"""
         self.IP_server = IP_ollama or self.IP_server
         self.port = port or self.port
@@ -39,21 +43,39 @@ class ollama:
             self.models = []
             return False
 
-    def check_IP(self):
+    def check_IP(self, IP = None):
         """Check the internet connession, return True if it work correctly, else return the status code/error if it is different from 200 """
-        try:
-            url = f"http://{self.IP_server}:{self.port}"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                #print("✅ Connessione al server riuscita.\n")
-                return True
-            else:
-                #print(f"⚠️ Server risponde con codice: {response.status_code}")
-                return response.status_code
-        except requests.exceptions.RequestException as e:
-            #print("❌ Impossibile connettersi al server:")
-            #print(e)
-            return e
+        if IP is not None:
+            try:
+                url = f"http://{self.IP}:{self.port}"
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
+                    #print("✅ Connessione al server riuscita.\n")
+                    return True
+                else:
+                    #print(f"⚠️ Server risponde con codice: {response.status_code}")
+                    return response.status_code
+            except requests.exceptions.RequestException as e:
+                #print("❌ Impossibile connettersi al server:")
+                #print(e)
+                return e
+            
+        else:
+            
+            try:
+                url = f"http://{self.IP_server}:{self.port}"
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
+                    #print("✅ Connessione al server riuscita.\n")
+                    return True
+                else:
+                    #print(f"⚠️ Server risponde con codice: {response.status_code}")
+                    return response.status_code
+            except requests.exceptions.RequestException as e:
+                #print("❌ Impossibile connettersi al server:")
+                #print(e)
+                return e
+        
 
 
 
@@ -81,6 +103,8 @@ class ollama:
                             json=payload,
                             timeout=timeout)
         
+        print(response.text)
+
         try:    
             response_data = response.json()
             self.history.append({"role": response_data['message']['role'], "content": response_data['message']['content']})
@@ -105,12 +129,31 @@ class ollama:
         models_data = response.json()
         self.models = [model['name'] for model in models_data.get('models', [])]
         return self.models
+    
+def ping(host):
+    # 'nt' indica Windows, altrimenti assume Linux/POSIX
+    if os.name == 'nt':
+        command = ['ping', '-n', '1', '-w', '1000', host]
+    else:
+        command = ['ping', '-c', '1', '-W', '1', host]
+    
+    try:
+        # Esegue il comando nascondendo l'output
+        subprocess.run(
+            command, 
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL, 
+            check=True
+        )
+        return True
+    except:
+        return False
 
 #print(conf.model_Ollama)
 
 if __name__ == "__main__":
     ollama_instance = ollama()
-    ollama_instance.load_conf()
+    ollama_instance.change_conf()
     print(ollama_instance.see_model())
     print()
     print(ollama_instance.request(prompt="sai alzare la spalla?"))

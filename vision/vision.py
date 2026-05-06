@@ -36,7 +36,7 @@ class Vision:
     def find_cameras(self):
         available_cameras = []
         for camera_info in enumerate_cameras():
-            print(f"Fotocamera trovata: {camera_info.name} (Indice: {camera_info.index})")
+            # print(f"Fotocamera trovata: {camera_info.name} (Indice: {camera_info.index})")
             available_cameras.append({
                 "index": camera_info.index,
                 "name": camera_info.name,
@@ -70,7 +70,7 @@ class Vision:
         self._cleanup()
 
     def _run_loop(self):
-        print("DB path:", self._db_path)
+        print("DB foto path:", self._db_path)
         print("Premi 'q' per uscire")
 
         if not self._cap or not self._cap.isOpened():
