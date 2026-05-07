@@ -1,13 +1,26 @@
 # Suppress TensorFlow/ABSL warnings before importing modules that use them
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow debug info
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # Disable oneDNN custom op warnings
 os.environ['ABSL_FLAGS_stderrthreshold'] = '2'  # Suppress ABSL warnings
+os.environ['ABSL_LOG_CPP_MIN_LEVEL'] = '3'  # Suppress absl C++ logs
 
+import traceback
 import json
 import queue
 import sys
 import threading
 import logging
+from pathlib import Path
+import datetime
+
+# Classe che duplica stderr su file LOG e terminale
+logs_dir = Path(__file__).resolve().parent / "logs"
+logs_dir.mkdir(exist_ok=True)
+day_str = datetime.datetime.now().strftime("%Y-%m-%d")
+stderr_file = logs_dir / f"log-{day_str}.log"
+stderr_fd = os.open(str(stderr_file), os.O_WRONLY | os.O_CREAT | os.O_APPEND)
+os.dup2(stderr_fd, 2)  # Reindirizza file descriptor 2 (stderr)
 
 # Suppress absl logging
 logging.getLogger('absl').setLevel(logging.ERROR)
@@ -16,12 +29,12 @@ import pyaudio
 import pyttsx3
 import vosk
 
-import datetime
-
 
 from vision.vision import Vision
-from requests3 import ollama
+from requests3 import ollama, ping, Ollama
 from audio import run_tts, recognize_speech, capture_audio, text_queue
+
+from utilities import write_log
 
 
 # to implement:
@@ -32,22 +45,103 @@ from audio import run_tts, recognize_speech, capture_audio, text_queue
 ##  scrittura su seriale
 
 
-#create functions
+def execute_movement(par: int) -> None:
 
-def write_log(message):
-    directory = "logs"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    
-    # In questo caso potresti volere un log giornaliero invece che al secondo
-    day_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    file_path = os.path.join(directory, f"log-{day_str}.log")
-    
-    # Il file si chiude da solo alla fine del blocco 'with'
-    with open(file_path, "a") as f:
-        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        f.write(f"[{timestamp}] {message}\n")
+    if par > 0 and par < 14:
+        print(f"eseguita azione: {ollama.movimenti[par]}")
 
+        ### da completare
+
+        write_log(f"executed movement {par}: {ollama.movimenti[par]}")
+
+    else:
+        write_log(f"impossible execute movemnt {par} (it doesn't exist)")
+
+
+
+def execute_command(input: str):
+
+    write_log(f"recived command{input}")
+
+
+    command = input.split()[0]
+    try:
+        par = input.split()[1]
+    except:
+        par = None
+    try:
+        flag = input.split()[2]
+    except:
+        flag = None
+
+
+    if command == "/execute":
+        if par is None:
+            print("""comando /execute deve essere seguito da un numero intero 0-12""")
+            
+        else:
+            try:
+                par = int(par)
+                if par > 12 or par < 0:
+                    raise ValueError
+                execute_movement(par)
+                print("movimento eseguito con successo")
+                
+            except:
+                print("""comando /execute deve essere seguito da un numero intero 0-12""")
+                
+
+
+    elif command == "/setIP":
+        if par is not None:
+            success, result = Ollama.change_conf(IP_ollama=par)
+            if success:
+                print("modifica IP server avvenuta con successo")
+            elif ping(par):
+                print("assicurarsi che ollama sia in esecuzione sul server")
+            else:
+                print("controllare lo stato del server")
+        else:
+            print(f"comando \"{command}\" deve essere seguito dall'indirizzo IP del server")
+
+        
+
+    elif command == "/setModel":
+        success, _ = Ollama.change_conf(model=par)
+        if success:
+            print("cambio modello avvento con successo")
+            
+        else:
+            print("impossibile modificare il modello, controlla lo stato del server ed i modelli presenti")
+            
+
+    elif command == "/seeModel":
+        success, models = Ollama.see_model()
+        if success:
+            if models:
+                print("modelli disponibili:")
+                for model in models:
+                    print(model)
+            else:
+                print("nessun modello presente sul server")
+        else:
+            print("errore nell'interrogazione del server")
+
+    elif command == "/help":
+        print("""
+Comandi disponibili:
+    /execute [0-12]     Esegue un movimento specifico (richiede un numero intero da 0 a 12).
+    /setIP [IP]         Cambia l'indirizzo IP del server Ollama.
+    /setModel [nome]    Imposta il modello linguistico da utilizzare sul server.
+    /seeModel           Mostra l'elenco dei modelli disponibili sul server.
+    /help               Mostra questo messaggio di aiuto.
+""")
+        
+
+    else:
+        print(f"comando \"{command}\" non riconosciuto")
+        write_log(f"commad \'{command}\' not known")
+        print("scrivi /help per vedere elenco comandi")
 
 
 def init_audio():
@@ -99,58 +193,15 @@ def init_audio():
 
     t_capture.start()
     t_stt.start()
-
-def execute(par: int) -> None:
-    print(f"eseguita azione: {ollama.movimenti[par]}")
-
-    ### da completare
-
-
-
-
-def execute_command(command: str):
-
-    if command.split()[0] == "/execute":
-
-        if command.split()[1][1] == "-":
-            pass
-
-
-        try:
-            int(command.split()[1])
-            execute(command.split()[1])
-            if command.split()[1] > 12 or command.split()[1] < 0:
-                raise ValueError    
-
-        except (IndexError, ValueError):
-            try:
-                int(command.split()[2])
-                execute(command.split()[2])
-                if command.split()[2] > 12 or command.split()[2] < 0:
-                    raise ValueError   
-
-            except:
-                print("""comando /execute deve essere seguito da un numero intero 0-12""")
-
-    
-    elif command.split()[0] == "/setIP":
-        if Ollama.change_conf(IP_ollama = command.split()[1]) == True:
-            print("modifica IP server avvenuta con successo")
-        elif ping :
-            print("errore nella modifica dell'idirizzo IP del server, controllare ")
-
-
-
-
-
-    pass
+    write_log("inizialized audio")
 
 
 
 def create_prompt(message, people):
-    prompt = {"massage": message,
+    prompt = {"message": message,
               "recognized people": people}
     prompt = str(prompt)
+    write_log(f"created prompt: \"{prompt}\"")
     # print(prompt)
     return prompt
 
@@ -158,9 +209,13 @@ def create_prompt(message, people):
 def handle_loop():
     while True:
         try:
-            prompt = input(">> ")
-            if prompt[0] == "/":
+            print(">> ", end=" ", flush=True)
+            prompt = input("")
+            if not prompt.strip():
+                continue
+            if prompt.strip().startswith("/"):
                 execute_command(prompt)
+                continue
             try:                
                 prompt = create_prompt(prompt, vision.get_last_recognized())
             except Exception as e:
@@ -178,7 +233,7 @@ def handle_loop():
                 if "movement" in response:
                     try:
                         index_movement = Ollama.movimenti.index(response["movement"])
-                        execute(index_movement)
+                        execute_movement(index_movement)
                     except ValueError:
                         write_log(f"Movimento sconosciuto: {response['movement']}")
                         print(f"Avviso: Movimento non riconosciuto: {response['movement']}")
@@ -188,6 +243,11 @@ def handle_loop():
         except KeyboardInterrupt:
             print("\nApplicazione terminata.")
             write_log("Applicazione terminata da utente")
+            write_log("")
+            write_log("========== END EXECUTION ==========")
+            write_log("")
+            write_log("")
+
             break
         except Exception as e:
             write_log(f"Errore non previsto in handle_loop: {e}")
@@ -219,7 +279,7 @@ def handle_loop_audio():
                     if "movement" in response:
                         try:
                             index_movement = Ollama.movimenti.index(response["movement"])
-                            execute(index_movement)
+                            execute_movement(index_movement)
                             run_tts(engine, stop_event, response["response"])
                         except ValueError:
                             write_log(f"Movimento sconosciuto: {response['movement']}")
@@ -239,10 +299,15 @@ def handle_loop_audio():
 
 if __name__ == "__main__":
     try:
+        
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Nasconde info e warning
+        os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # Disattiva il warning specifico su oneDNN
+        os.environ['ABSL_LOG_CPP_MIN_LEVEL'] = '0'
+
         print("Inizializzazione in corso...")
         write_log("Inizializzazione in corso")
 
-        Ollama = ollama()
+
         vision = Vision()
 
         print("\nTelecamere disponibili:")
@@ -250,7 +315,8 @@ if __name__ == "__main__":
         for cam_info in cameras:
             print(f"  • {cam_info['index']}: {cam_info['name']}")
         
-        cam = input("\nA quale camera vuoi connetterti? ")
+        print("\nA quale camera vuoi connetterti?", end=" ", flush=True)
+        cam = input("")
         try:
             cam = int(cam)
             print(f"Connessione alla camera {cam}")
@@ -258,6 +324,11 @@ if __name__ == "__main__":
             print("Indice non valido. Inserisci un numero tra quelli indicati.")
             write_log("Errore: indice camera non valido")
             sys.exit(1)
+
+        _, models = Ollama.see_model()
+        if _:
+            print(f"scegli modello: {models}")
+            Ollama.change_model(input())
             
         vision.start(camera=cam)
         
@@ -275,7 +346,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nApplicazione terminata.")
         write_log("Applicazione terminata da utente durante inizializzazione")
+        write_log("")
+        write_log("========== END EXECUTION ==========")
+        write_log("")
+        write_log("")
     except Exception as e:
         print(f"Errore critico: {e}")
-        write_log(f"Errore critico durante inizializzazione: {e}")
+        write_log(f"Errore critico durante inizializzazione: {e} {traceback.format_exc()}")
         sys.exit(1)

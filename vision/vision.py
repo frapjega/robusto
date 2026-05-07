@@ -7,6 +7,7 @@ from pathlib import Path
 import threading
 import collections
 import time
+from utilities import write_log
 
 class Vision:
     def __init__(self):
@@ -71,7 +72,7 @@ class Vision:
 
     def _run_loop(self):
         print("DB foto path:", self._db_path)
-        print("Premi 'q' per uscire")
+        print("Premi 'q' per interrompere il riconoscimento")
 
         if not self._cap or not self._cap.isOpened():
             print("Errore: impossibile aprire la videocamera")
@@ -126,7 +127,7 @@ class Vision:
             if self.last_person_found:
                 with open("recognition.txt", "w") as f:
                     f.write("")
-                print("Nessuna persona presente")
+                #print("Nessuna persona presente")
             self.last_person_found = False
             self.last_name = None
             with self._lock:
@@ -150,7 +151,7 @@ class Vision:
                 if self.last_person_found:
                     with open("recognition.txt", "w") as f:
                         f.write("")
-                    print("Nessuna persona presente")
+                    write_log("Nessuna persona presente")
                 self.last_person_found = False
                 self.last_name = None
                 with self._lock:
