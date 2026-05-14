@@ -4,6 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow debug info
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # Disable oneDNN custom op warnings
 os.environ['ABSL_FLAGS_stderrthreshold'] = '2'  # Suppress ABSL warnings
 os.environ['ABSL_LOG_CPP_MIN_LEVEL'] = '3'  # Suppress absl C++ logs
+import serial.tools.list_ports
 
 import traceback
 import json
@@ -31,10 +32,10 @@ import vosk
 
 
 from vision.vision import Vision
-from requests3 import ollama, ping, Ollama
+from requests3 import ollama, Ollama
 from audio import run_tts, recognize_speech, capture_audio, text_queue
 
-from utilities import write_log
+from utilities import write_log, ping
 
 
 # to implement:
@@ -44,11 +45,21 @@ from utilities import write_log
 ##  comandi
 ##  scrittura su seriale
 
+SerPort = None
+SerBaud = 9600
 
 def execute_movement(par: int) -> None:
 
     if par > 0 and par < 14:
-        print(f"eseguita azione: {ollama.movimenti[par]}")
+
+        try:
+            with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
+                ser.write(b'Hello Device\n')
+            print(f"eseguita azione: {ollama.movimenti[par]}")
+
+        except Exception as e:
+            print(f"errore durante esecuzione ezione: {e}")
+
 
         ### da completare
 
@@ -67,7 +78,7 @@ def execute_command(input: str):
     command = input.split()[0]
     try:
         par = input.split()[1]
-    except:
+    except IndexError:
         par = None
     try:
         flag = input.split()[2]
@@ -310,6 +321,28 @@ if __name__ == "__main__":
 
         vision = Vision()
 
+        _, models = Ollama.see_model()
+        if _:
+            print(f"scegli modello: {models}")
+            Ollama.change_model(input())
+
+
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            print(f"Porta: {port.device} - Descrizione: {port.description}")
+        print("\nA quale porta vuoi collegarti?", end=" ", flush=True)
+        port = input("")
+        SerPort = port
+        print("\nInserisci il baud rate (default 9600)", end=" ", flush=True)
+        baud = input("")
+        if baud == None:
+            baud = 9600
+
+        SerBaud = baud
+
+        
+
+
         print("\nTelecamere disponibili:")
         cameras = vision.find_cameras()
         for cam_info in cameras:
@@ -317,6 +350,7 @@ if __name__ == "__main__":
         
         print("\nA quale camera vuoi connetterti?", end=" ", flush=True)
         cam = input("")
+
         try:
             cam = int(cam)
             print(f"Connessione alla camera {cam}")
@@ -324,11 +358,6 @@ if __name__ == "__main__":
             print("Indice non valido. Inserisci un numero tra quelli indicati.")
             write_log("Errore: indice camera non valido")
             sys.exit(1)
-
-        _, models = Ollama.see_model()
-        if _:
-            print(f"scegli modello: {models}")
-            Ollama.change_model(input())
             
         vision.start(camera=cam)
         

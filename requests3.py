@@ -1,4 +1,4 @@
-from ast import main
+# from ast import main
 import requests
 from pythonping import ping
 import subprocess
@@ -67,7 +67,7 @@ class ollama:
         """Check the internet connession, return True if it work correctly, else return the status code/error if it is different from 200 """
         if IP is not None:
             try:
-                url = f"http://{self.IP}:{self.port}"
+                url = f"http://{IP}:{self.port}"
                 response = requests.get(url, timeout=5)
                 if response.status_code == 200:
                     #print("✅ Connessione al server riuscita.\n")
@@ -169,27 +169,6 @@ class ollama:
             write_log(f"impossible update models list: {e}")
             return False, None
         
-def ping(host):
-    # 'nt' indica Windows, altrimenti assume Linux/POSIX
-    if os.name == 'nt':
-        command = ['ping', '-n', '1', '-w', '1000', host]
-    else:
-        command = ['ping', '-c', '1', '-W', '1', host]
-    
-    try:
-        # Esegue il comando nascondendo l'output
-        subprocess.run(
-            command, 
-            stdout=subprocess.DEVNULL, 
-            stderr=subprocess.DEVNULL, 
-            check=True
-        )
-
-        write_log(f"ping to {host}, host reachable")
-        return True
-    except:
-        write_log(f"ping to {host}, unpossible to reach destination")
-        return False
 
 Ollama = ollama()
 #print(conf.model_Ollama)

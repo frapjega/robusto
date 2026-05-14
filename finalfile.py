@@ -8,7 +8,7 @@ import pyaudio
 import json
 import contextlib
 from vosk import Model, KaldiRecognizer
-from vision import vision  # importa la tua classe Vision con face_detection già modificata
+from vision.vision import vision  # importa la tua classe Vision con face_detection già modificata
 
 # === Configurazione server ===
 CONFIG_FILE = "config.txt"
