@@ -58,7 +58,7 @@ def execute_movement(par: int) -> None:
             print(f"eseguita azione: {ollama.movimenti[par]}")
 
         except Exception as e:
-            if e is "invalid literal for int() with base 10: ''":
+            if e == "invalid literal for int() with base 10: ''":
                 print(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
                 write_log(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
             else:
@@ -329,7 +329,9 @@ if __name__ == "__main__":
 
         _, models = Ollama.see_model()
         if _:
-            print(f"scegli modello: {models}")
+            print(f"scegli modello:")
+            for i in models:
+                print("    "+i)
             Ollama.change_model(input())
 
 
@@ -362,7 +364,7 @@ if __name__ == "__main__":
             print(f"Connessione alla camera {cam}")
         except ValueError:
             print("Indice non valido. Inserisci un numero tra quelli indicati.")
-            write_log("Errore: indice camera non valido")
+            write_log(f"Errore: indice camera non valido, inserito: {cam}")
             sys.exit(1)
             
         vision.start(camera=cam)
