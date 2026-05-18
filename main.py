@@ -59,6 +59,8 @@ def execute_movement(par: int) -> None:
 
         except Exception as e:
             print(f"errore durante esecuzione ezione: {e}")
+            write_log(f"errore durante esecuzione ezione: {e}")
+            
 
 
         ### da completare
