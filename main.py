@@ -58,8 +58,12 @@ def execute_movement(par: int) -> None:
             print(f"eseguita azione: {ollama.movimenti[par]}")
 
         except Exception as e:
-            print(f"errore durante esecuzione ezione: {e}")
-            write_log(f"errore durante esecuzione ezione: {e}")
+            if e is "invalid literal for int() with base 10: ''":
+                print(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
+                write_log(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
+            else:
+                print(f"errore durante esecuzione ezione: {e}")
+                write_log(f"errore durante esecuzione ezione: {e}")
             
 
 
