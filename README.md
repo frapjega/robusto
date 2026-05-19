@@ -105,11 +105,13 @@ Assicurati che Ollama sia in esecuzione sul tuo sistema o su un server raggiungi
 
 **Importa il modello ROBUSTO:**
 
+**Linux / macOS**
 ```bash
-# Linux / macOS
 ollama create robusto -f docs/Modelfile.txt
+```
 
-# Windows
+**Windows**
+```powershell
 ollama create robusto -f docs\Modelfile.txt
 ```
 
