@@ -106,7 +106,11 @@ Assicurati che Ollama sia in esecuzione sul tuo sistema o su un server raggiungi
 **Importa il modello ROBUSTO:**
 
 ```bash
-ollama create robusto -f Modelfile.txt
+# Linux / macOS
+ollama create robusto -f docs/Modelfile.txt
+
+# Windows
+ollama create robusto -f docs\Modelfile.txt
 ```
 
 **Verifica che Ollama risponda:**
@@ -137,10 +141,8 @@ Il nome della cartella viene usato come nome della persona riconosciuta.
 ## Avvio
 
 ```bash
-# Linux / macOS
 python main.py
 
-# Windows
 python main.py
 ```
 

@@ -31,11 +31,12 @@ import pyttsx3
 import vosk
 
 
-from vision.vision import Vision
-from requests3 import ollama, Ollama
-from audio import run_tts, recognize_speech, capture_audio, text_queue
+from src.vision.vision import Vision
+from src.api.requests3 import ollama, Ollama
+from src.audio.audio import run_tts, recognize_speech, capture_audio, text_queue
 
-from utilities import write_log, ping
+from src.log.log import write_log
+from src.api.utilities import ping
 
 
 # to implement:
@@ -58,9 +59,11 @@ def execute_movement(par: int) -> None:
             print(f"eseguita azione: {ollama.movimenti[par]}")
 
         except Exception as e:
-            if e == "invalid literal for int() with base 10: ''":
-                print(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
-                write_log(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
+            if str(e) == "invalid literal for int() with base 10: ''":
+                from rich import print
+
+                print(f"[bold red]Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\"[/bold red].")
+                write_log(f"nessuna porta seriale inserita, non eseguito movimento {ollama.movimenti[par]}")
             else:
                 print(f"errore durante esecuzione ezione: {e}")
                 write_log(f"errore durante esecuzione ezione: {e}")
