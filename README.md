@@ -1,66 +1,32 @@
-# 🤖 Ro-Busto
+# RO-BUSTO 
 
-> **Versione:** 1.0.0 | **Stato:** In sviluppo  
-> **Autori** (di v1.0.0) **:** Guido Gusberti, Alex Vadeu, Pietro Fratesi  
-> **Istituto:** ITIS G. Cardano, Pavia  
-> **Supervisore:** Prof. Ing. Nicola Muto  
+> **Versione:** 1.0.0  
+> **Autori:** Pietro Fratesi (frapjega)  
+> **Istituto:** ITIS G. Cardano, Pavia (PV)  
+> **Svulippato nell'ambito di:** Ro-Busto scuola futura
 
----
-
-## Cos'è Ro-Busto?
-
-**Ro-Busto** è un robot umanoide open-source sviluppato come progetto extrascolastico presso l'ITIS G. Cardano di Pavia. Il sistema integra un modello LLM locale (Mixtral 8x7B via Ollama), riconoscimento vocale (Vosk), sintesi vocale (Pyttsx3) e controllo fisico dei motori tramite due Arduino Mega, il tutto orchestrato da un PC locale.
-
-Il robot è in grado di:
-- **Ascoltare** comandi vocali in italiano tramite hotword detection (`"itis cardano"`)
-- **Ragionare** grazie a un LLM personalizzato con identità propria ("ROBUSTO")
-- **Rispondere** a voce in italiano
-- **Muoversi** fisicamente tramite 13 comandi motori distribuiti su due Arduino Mega
-
-Per una descrizione dettagliata dell'architettura e dei protocolli di comunicazione, vedi [`ARCHITECTURE.md`](./ARCHITECTURE.md).  
-Per gli sviluppi futuri pianificati, vedi [`FUTURE_DEVELOPMENTS.md`](./FUTURE_DEVELOPMENTS.md).
+**RO-BUSTO** è un sistema robotico interattivo dotato di riconoscimento facciale, riconoscimento vocale e controllo fisico di componenti meccaniche tramite porta seriale. Il comportamento dell'IA è gestito da un modello LLM locale tramite [Ollama](https://ollama.com).
 
 ---
 
-## Indice
+## Funzionalità
 
-- [Requisiti](#requisiti)
-- [Installazione](#installazione)
-- [Configurazione](#configurazione)
-- [Avvio](#avvio)
-- [Comandi disponibili](#comandi-disponibili)
-- [Modalità operative](#modalità-operative)
-- [Struttura del progetto](#struttura-del-progetto)
+- **Riconoscimento facciale** — identifica persone tramite webcam usando DeepFace; analizza anche le emozioni in tempo reale.
+- **Interazione AI** — risponde in linguaggio naturale tramite un modello LLM locale (default: `gemma3:4b`) con il personaggio ROBUSTO.
+- **Controllo movimenti** — invia comandi seriali per eseguire movimenti fisici (braccia, mani, collo).
+- **Riconoscimento vocale** *(opzionale)* — converte l'audio del microfono in testo tramite Vosk e risponde con sintesi vocale via pyttsx3.
+- **Logging** — tutti gli eventi vengono registrati in `logs/log-YYYY-MM-DD.log`.
 
 ---
 
-## Requisiti
+## Requisiti di sistema
 
-### Hardware
-| Componente | Dettagli |
+| Componente | Versione minima |
 |---|---|
-| PC Locale (Windows 10/11) | Orchestratore centrale |
-| Arduino Mega x2 | Controllo motori lato sinistro e destro |
-| Microfono USB | Acquisizione audio |
-| Server con GPU | Hosting del modello LLM via Ollama |
-
-### Software
-- Python **3.9+**
-- [Ollama](https://ollama.com/) installato sul server con il modello `robusto_mixtral_v7:latest`
-- Modello Vosk per l'italiano: [`vosk-model-it-0.22`](https://alphacephei.com/vosk/models)
-- Voce TTS italiana installata su Windows: `TTS_MS_IT-IT_ELSA_11.0`
-
-### Dipendenze Python
-
-```bash
-pip install requests pyttsx3 pyaudio vosk
-```
-
-> **Nota:** su alcune macchine PyAudio richiede i binari di PortAudio. Su Windows si consiglia di installarlo tramite un wheel precompilato:
-> ```bash
-> pip install pipwin
-> pipwin install pyaudio
-> ```
+| Python | 3.9+ |
+| Ollama | qualsiasi versione recente |
+| Webcam | qualsiasi webcam compatibile con OpenCV |
+| Porta seriale | opzionale (per i movimenti fisici) |
 
 ---
 
@@ -68,125 +34,169 @@ pip install requests pyttsx3 pyaudio vosk
 
 ### 1. Clona il repository
 
+**Linux / macOS**
 ```bash
-git clone https://github.com/itis-cardano/ro-busto.git
-cd ro-busto
+git clone https://github.com/frapjega/robusto.git
+cd robusto
 ```
 
-### 2. Installa le dipendenze Python
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Scarica il modello Vosk
-
-Scarica [`vosk-model-it-0.22`](https://alphacephei.com/vosk/models) e decomprimi la cartella nella root del progetto:
-
-```
-ro-busto/
-├── vosk-model-it-0.22/   ← qui
-├── finalfile.py
-└── ...
-```
-
-### 4. Configura e avvia il server Ollama
-
-Sul server cloud (o in locale), assicurati che Ollama sia in esecuzione con il modello personalizzato:
-
-```bash
-# Crea il modello a partire dal Modelfile
-ollama create robusto_mixtral_v7 -f ./Modelfile
-
-# Verifica che il modello sia presente
-ollama list
-
-# Avvia il server (porta default: 11434)
-ollama serve
+**Windows (PowerShell)**
+```powershell
+git clone https://github.com/frapjega/robusto.git
+cd robusto
 ```
 
 ---
 
-## Configurazione
+### 2. Crea l'ambiente virtuale Python
 
-All'avvio, il client legge l'IP del server da `config.txt` nella root del progetto. Se il file non esiste, viene usato l'IP di default `10.110.99.5`.
-
-Per cambiare l'IP senza modificare il file manualmente, usa il comando `/cambia_ip` a runtime (vedi [Comandi disponibili](#comandi-disponibili)).
-
-### Modifica manuale
-
-Crea (o modifica) `config.txt` nella root:
-
-```
-192.168.1.100
+**Linux / macOS**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-### Parametri principali in `finalfile.py`
+**Windows (PowerShell)**
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
 
-| Variabile | Valore default | Descrizione |
-|---|---|---|
-| `PORT` | `11434` | Porta del server Ollama |
-| `MODEL_NAME` | `robusto_mixtral_v7:latest` | Nome del modello Ollama da usare |
-| `MODEL_PATH` | `vosk-model-it-0.22` | Percorso del modello Vosk |
-| `RATE` | `16000` | Sample rate audio (Hz) |
-| `SILENCE_TIME` | `1` | Secondi di silenzio per terminare l'ascolto |
+> Se PowerShell blocca l'esecuzione degli script, esegui prima:
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+
+---
+
+### 3. Installa le dipendenze
+
+**Linux / macOS**
+```bash
+pip install -r requirements.txt
+```
+
+**Windows**
+```powershell
+pip install -r requirements.txt
+```
+
+> ⚠️ **DeepFace** richiede TensorFlow. Su Windows assicurati di avere installato [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
+
+---
+
+### 4. Scarica il modello Vosk *(per il riconoscimento vocale)*
+
+Scarica il modello italiano da [alphacep.com/models](https://alphacep.com/models.html) e posiziona la cartella estratta nella root del progetto rinominandola `model/`:
+
+```
+robusto/
+└── model/
+    ├── am/
+    ├── conf/
+    └── ...
+```
+
+---
+
+### 5. Configura Ollama e importa il modello
+
+Assicurati che Ollama sia in esecuzione sul tuo sistema o su un server raggiungibile.
+
+**Importa il modello ROBUSTO:**
+
+**Linux / macOS**
+```bash
+ollama create robusto -f docs/Modelfile.txt
+```
+
+**Windows**
+```powershell
+ollama create robusto -f docs\Modelfile.txt
+```
+
+**Verifica che Ollama risponda:**
+```bash
+curl http://127.0.0.1:11434/api/tags
+```
+
+---
+
+### 6. Aggiungi i volti da riconoscere
+
+Crea la cartella `assets/faces/` e organizza le foto per persona:
+
+```
+assets/
+└── faces/
+    ├── Mario/
+    │   ├── foto1.jpg
+    │   └── foto2.jpg
+    └── Giulia/
+        └── foto1.jpg
+```
+
+Il nome della cartella viene usato come nome della persona riconosciuta.
 
 ---
 
 ## Avvio
 
 ```bash
-python finalfile.py
+python main.py
+
+python main.py
 ```
 
-All'avvio il programma:
-1. Verifica la connessione al server Ollama
-2. Mostra il banner ASCII "ITIS CARDANO"
-3. Chiede se usare la modalità voce o testo
-
----
-
-## Modalità operative
-
-### Modalità Testo (default)
-Interazione tramite terminale: inserisci il prompt e leggi la risposta del modello.
-
-### Modalità Voce
-Attivazione tramite hotword: pronuncia **"itis cardano"** per iniziare l'ascolto. Il robot risponde a voce tramite la sintesi TTS.
-
-Per uscire dalla modalità voce, pronuncia **"esci"**.
+All'avvio il sistema richiede interattivamente:
+1. Il modello Ollama da usare
+2. La porta seriale (invio per saltare)
+3. L'indice della webcam da usare
 
 ---
 
 ## Comandi disponibili
 
-Validi in modalità testo:
+Durante l'esecuzione puoi digitare messaggi liberi o usare i comandi seguenti:
 
 | Comando | Descrizione |
 |---|---|
-| `esci` / `/esci` / `exit` | Termina la sessione |
-| `/info` | Mostra le specifiche tecniche del modello Mixtral 8x7B |
-| `/ping` | Verifica la connessione al server |
-| `/cambia_ip` | Aggiorna l'IP del server (viene salvato in `config.txt`) |
+| `/execute [0-12]` | Esegue un movimento specifico |
+| `/setIP [IP]` | Cambia l'IP del server Ollama |
+| `/setModel [nome]` | Imposta il modello LLM da usare |
+| `/seeModel` | Elenca i modelli disponibili sul server |
+| `/help` | Mostra l'elenco dei comandi |
 
 ---
 
 ## Struttura del progetto
 
 ```
-ro-busto/
-├── finalfile.py              # Script principale
-├── config.txt                # IP del server (auto-generato)
-├── Modelfile                 # Configurazione del modello Ollama
-├── vosk-model-it-0.22/       # Modello ASR italiano (da scaricare)
-├── requirements.txt          # Dipendenze Python
-├── README.md                 # Questo file
-├── ARCHITECTURE.md           # Architettura e protocolli
-└── FUTURE_DEVELOPMENTS.md    # Roadmap e sviluppi futuri
+robusto/
+├── main.py              # Entrypoint — ciclo principale, comandi, interazione utente
+├── requests3.py         # Client Ollama — invio prompt e gestione risposte AI
+├── utilities.py         # Logging e funzioni di utilità condivise
+├── audio.py             # Pipeline audio: cattura, STT (Vosk) e TTS (pyttsx3)
+├── vision/
+│   └── vision.py        # Riconoscimento facciale con DeepFace
+├── assets/
+│   └── faces/           # Database foto per il riconoscimento
+├── model/               # Modello Vosk (da scaricare separatamente)
+├── logs/                # Log giornalieri generati automaticamente
+├── Modelfile.txt        # Definizione del personaggio ROBUSTO per Ollama
+└── requirements.txt     # Dipendenze Python
 ```
 
 ---
 
-## Licenza
+## Note
 
-Progetto sviluppato a scopo educativo nell'ambito delle attività extrascolastiche dell'ITIS G. Cardano di Pavia.
+- Il file `recognition.txt` nella root viene aggiornato in tempo reale con il nome dell'ultima persona riconosciuta.
+- Il parametro `THRESHOLD` in `vision.py` (default `0.5`) controlla la soglia di confidenza del riconoscimento facciale: abbassarlo rende il riconoscimento più severo.
+- La cronologia della conversazione con Ollama viene mantenuta in memoria per tutta la sessione e azzerata al riavvio.
+- Il modulo audio (`handle_loop_audio`) è presente ma disabilitato di default: per attivarlo decommentare le righe relative in `main.py`.
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> e7a60f7a862d62c0641882b545c7ba2d1f498a03

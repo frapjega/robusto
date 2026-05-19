@@ -1,3 +1,11 @@
-.env/
-descrition.txt
-FUTURE_DEVELOPMENTS.md
+.env
+vision/recognition.txt
+**/__pycache__/
+model/
+logs/**
+appunti.*
+/recognition.txt
+recognition.*
+/recognition.txt
+recognition.txt
+.ruff_cache
