@@ -192,8 +192,3 @@ robusto/
 - La cronologia della conversazione con Ollama viene mantenuta in memoria per tutta la sessione e azzerata al riavvio.
 - Il modulo audio (`handle_loop_audio`) è presente ma disabilitato di default: per attivarlo decommentare le righe relative in `main.py`.
 
----
-
-## Crediti
-
-Progetto sviluppato dalla **classe 3^IFL** dell'ITIS Cardano, sotto la guida del professor e ingegnere **Nicola Muto**.
