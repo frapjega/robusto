@@ -195,8 +195,3 @@ robusto/
 - Il parametro `THRESHOLD` in `vision.py` (default `0.5`) controlla la soglia di confidenza del riconoscimento facciale: abbassarlo rende il riconoscimento più severo.
 - La cronologia della conversazione con Ollama viene mantenuta in memoria per tutta la sessione e azzerata al riavvio.
 - Il modulo audio (`handle_loop_audio`) è presente ma disabilitato di default: per attivarlo decommentare le righe relative in `main.py`.
-
-<<<<<<< HEAD
-
-=======
->>>>>>> e7a60f7a862d62c0641882b545c7ba2d1f498a03
