@@ -172,19 +172,39 @@ Durante l'esecuzione puoi digitare messaggi liberi o usare i comandi seguenti:
 ## Struttura del progetto
 
 ```
+
 robusto/
-├── main.py              # Entrypoint — ciclo principale, comandi, interazione utente
-├── requests3.py         # Client Ollama — invio prompt e gestione risposte AI
-├── utilities.py         # Logging e funzioni di utilità condivise
-├── audio.py             # Pipeline audio: cattura, STT (Vosk) e TTS (pyttsx3)
-├── vision/
-│   └── vision.py        # Riconoscimento facciale con DeepFace
+├── main.py                 # Entrypoint — ciclo principale, comandi e interazione utente
+├── requirements.txt        # Dipendenze Python
+├── recognition.txt         # File di output per il riconoscimento
+├── README.md               # Documentazione principale del progetto
+│
+├── src/                    # Codice sorgente dell'applicazione
+│   ├── api/
+│   │   ├── requests3.py    # Client Ollama — invio prompt e gestione risposte AI
+│   │   └── utilities.py    # Funzioni di utilità condivise
+│   ├── audio/
+│   │   ├── audio.py        # Pipeline audio: cattura, STT (Vosk) e TTS (pyttsx3)
+│   │   └── vosk-model-small-it-0.22.zip # Modello di riconoscimento vocale Vosk
+│   ├── log/
+│   │   └── log.py          # Gestione e configurazione del sistema di logging
+│   └── vision/
+│       └── vision.py       # Riconoscimento facciale con DeepFace
+│
 ├── assets/
-│   └── faces/           # Database foto per il riconoscimento
-├── model/               # Modello Vosk (da scaricare separatamente)
-├── logs/                # Log giornalieri generati automaticamente
-├── Modelfile.txt        # Definizione del personaggio ROBUSTO per Ollama
-└── requirements.txt     # Dipendenze Python
+│   └── faces/              # Database foto per il riconoscimento facciale
+│       ├── Eddy/           # Immagini di target per il volto di Eddy
+│       ├── Lucas/          # Immagini di target per il volto di Lucas
+│       ├── Malek/          # Immagini di target per il volto di Malek
+│       ├── Pietro/         # Immagini di target per il volto di Pietro
+│       └── Prof Muto/      # Immagini di target per il volto del Prof Muto
+│
+├── docs/
+│   ├── Modelfile.txt       # Definizione del personaggio ROBUSTO per Ollama
+│   └── structure.md        # Note interne sulla struttura
+│
+└── logs/                   # Log giornalieri generati automaticamente (es. log-YYYY-MM-DD.log)
+
 ```
 
 ---
