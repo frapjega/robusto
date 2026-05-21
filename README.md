@@ -12,7 +12,7 @@
 ## Funzionalità
 
 - **Riconoscimento facciale** — identifica persone tramite webcam usando DeepFace; analizza anche le emozioni in tempo reale.
-- **Interazione AI** — risponde in linguaggio naturale tramite un modello LLM locale (default: `gemma3:4b`) con il personaggio ROBUSTO.
+- **Interazione AI** — risponde in linguaggio naturale tramite un modello LLM locale (default: `mistral-small3.2`) con il personaggio ROBUSTO.
 - **Controllo movimenti** — invia comandi seriali per eseguire movimenti fisici (braccia, mani, collo).
 - **Riconoscimento vocale** *(opzionale)* — converte l'audio del microfono in testo tramite Vosk e risponde con sintesi vocale via pyttsx3.
 - **Logging** — tutti gli eventi vengono registrati in `logs/log-YYYY-MM-DD.log`.
