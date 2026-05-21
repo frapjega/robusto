@@ -14,6 +14,7 @@ import threading
 import logging
 from pathlib import Path
 import datetime
+import time
 
 # Classe che duplica stderr su file LOG e terminale
 logs_dir = Path(__file__).resolve().parent / "logs"
@@ -51,18 +52,22 @@ SerBaud = 9600
 
 def execute_movement(par: int) -> None:
 
-    if par > 0 and par < 14:
+    if par >= 0 and par < 14:
 
         try:
-            with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
-                ser.write(b'Hello Device\n')
-            print(f"eseguita azione: {ollama.movimenti[par]}")
+            #with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
+            with serial.Serial("COM3", "9600", timeout=1) as ser:
+                
+                time.sleep(2)
+                ser.write(str(par).encode('utf-8'))
+            print(f"eseguita azione: {ollama.movimenti[par]}, scritto {par}")
 
         except Exception as e:
             if str(e) == "invalid literal for int() with base 10: ''":
-                from rich import print
+                #from rich import print
 
-                print(f"[bold red]Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\"[/bold red].")
+                #print(f"[bold red]Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\"[/bold red].")
+                print(f"Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\".")
                 write_log(f"nessuna porta seriale inserita, non eseguito movimento {ollama.movimenti[par]}")
             else:
                 print(f"errore durante esecuzione ezione: {e}")
