@@ -14,6 +14,7 @@ import threading
 import logging
 from pathlib import Path
 import datetime
+import time
 
 # Classe che duplica stderr su file LOG e terminale
 logs_dir = Path(__file__).resolve().parent / "logs"
@@ -31,11 +32,12 @@ import pyttsx3
 import vosk
 
 
-from vision.vision import Vision
-from requests3 import ollama, Ollama
-from audio import run_tts, recognize_speech, capture_audio, text_queue
+from src.vision.vision import Vision
+from src.api.requests3 import ollama, Ollama
+from src.audio.audio import run_tts, recognize_speech, capture_audio, text_queue
 
-from utilities import write_log, ping
+from src.log.log import write_log
+from src.api.utilities import ping
 
 
 # to implement:
@@ -50,17 +52,23 @@ SerBaud = 9600
 
 def execute_movement(par: int) -> None:
 
-    if par > 0 and par < 14:
+    if par >= 0 and par < 14:
 
         try:
-            with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
-                ser.write(b'Hello Device\n')
-            print(f"eseguita azione: {ollama.movimenti[par]}")
+            #with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
+            with serial.Serial("COM3", "9600", timeout=1) as ser:
+                
+                time.sleep(2)
+                ser.write(str(par).encode('utf-8'))
+            print(f"eseguita azione: {ollama.movimenti[par]}, scritto {par}")
 
         except Exception as e:
-            if e is "invalid literal for int() with base 10: ''":
-                print(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
-                write_log(f"nessuna porta serial inserita, non eseguito movimento {ollama.movimenti[par]}")
+            if str(e) == "invalid literal for int() with base 10: ''":
+                #from rich import print
+
+                #print(f"[bold red]Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\"[/bold red].")
+                print(f"Nessuna porta seriale inserita, impossibile inviare movimento \"{ollama.movimenti[par]}\".")
+                write_log(f"nessuna porta seriale inserita, non eseguito movimento {ollama.movimenti[par]}")
             else:
                 print(f"errore durante esecuzione ezione: {e}")
                 write_log(f"errore durante esecuzione ezione: {e}")
@@ -329,7 +337,9 @@ if __name__ == "__main__":
 
         _, models = Ollama.see_model()
         if _:
-            print(f"scegli modello: {models}")
+            print(f"scegli modello:")
+            for i in models:
+                print("    "+i)
             Ollama.change_model(input())
 
 
@@ -362,7 +372,7 @@ if __name__ == "__main__":
             print(f"Connessione alla camera {cam}")
         except ValueError:
             print("Indice non valido. Inserisci un numero tra quelli indicati.")
-            write_log("Errore: indice camera non valido")
+            write_log(f"Errore: indice camera non valido, inserito: {cam}")
             sys.exit(1)
             
         vision.start(camera=cam)

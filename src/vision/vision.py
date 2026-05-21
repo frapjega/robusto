@@ -7,7 +7,7 @@ from pathlib import Path
 import threading
 import collections
 import time
-from utilities import write_log
+from src.log.log import write_log
 
 class Vision:
     def __init__(self):
@@ -28,7 +28,7 @@ class Vision:
 
     def _get_db_path(self):
         try:
-            return str((self._working_path.parent / "assets" / "faces").resolve())
+            return str((self._working_path.parent.parent.parent / "assets" / "faces").resolve())
         except Exception as e3:
             print(f"Errore durante il recupero del percorso del database: {e3}")
             return None            

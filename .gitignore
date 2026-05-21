@@ -6,4 +6,6 @@ logs/**
 appunti.*
 /recognition.txt
 recognition.*
+/recognition.txt
 recognition.txt
+.ruff_cache

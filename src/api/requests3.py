@@ -4,7 +4,9 @@ from pythonping import ping
 import subprocess
 import os
 import datetime
-from utilities import write_log
+# from ..log.log import write_log
+from src.log.log import write_log
+
 
 
 try:    
