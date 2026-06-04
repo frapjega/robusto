@@ -52,14 +52,33 @@ SerBaud = 9600
 
 def execute_movement(par: int) -> None:
 
+    global SerPort
+    global SerBaud
+
+
     if par >= 0 and par < 14:
 
         try:
             #with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
-            with serial.Serial("COM3", "9600", timeout=1) as ser:
+            with serial.Serial(SerPort, SerBaud, timeout=1) as ser:
                 
-                time.sleep(2)
-                ser.write(str(par).encode('utf-8'))
+                time.sleep(1)
+                # ser.write(str(f"{par}\n").encode('utf-8'))
+                # ser.write(str("01\n").encode('utf-8'))
+
+                par = str(par)
+                if len(str) == 1:
+                    par = "0" + par + "\n"
+
+                else:
+                    par = par + "\n"
+
+                ser.write(par.encode('utf-8'))
+
+                risposta_byte = ser.readline()
+                risposta_testo = risposta_byte.decode("utf-8").strip()
+                print(f"testo seriale: {risposta_testo}\ntesto seriale: {risposta_byte}")
+
             print(f"eseguita azione: {ollama.movimenti[par]}, scritto {par}")
 
         except Exception as e:

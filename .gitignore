@@ -9,3 +9,4 @@ recognition.*
 /recognition.txt
 recognition.txt
 .ruff_cache
+assets/faces/ds_model_vggface_detector_opencv_aligned_normalization_base_expand_0.pkl
